@@ -50,6 +50,32 @@ cursor.execute("""
     )
 """)
 
+# Notes table for the simple notes app
+# - created_at / updated_at are stored as TEXT to match the requested schema.
+# - Defaults use SQLite datetime('now') as requested.
+cursor.execute("""
+    CREATE TABLE IF NOT EXISTS notes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        content TEXT NOT NULL,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+""")
+
+# Keep updated_at current whenever a row is updated.
+# SQLite doesn't support ON UPDATE for columns, so we use a trigger.
+cursor.execute("""
+    CREATE TRIGGER IF NOT EXISTS notes_set_updated_at
+    AFTER UPDATE ON notes
+    FOR EACH ROW
+    BEGIN
+        UPDATE notes
+        SET updated_at = datetime('now')
+        WHERE id = OLD.id;
+    END;
+""")
+
 # Insert initial data
 cursor.execute("INSERT OR REPLACE INTO app_info (key, value) VALUES (?, ?)", 
                ("project_name", "database"))
